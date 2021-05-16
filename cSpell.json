@@ -1,0 +1,23 @@
+{
+    "version": "0.1",
+    "language": "en-US",
+    "words": [
+        "autoload",
+        "autowire",
+        "autowired",
+        "autowiring",
+        "classmap",
+        "dotnotation",
+        "escapestudios",
+        "laravel",
+        "phpcs",
+        "phpdocumentor",
+        "phpspec",
+        "phpunit",
+        "squiz",
+        "symfony",
+        "xeno",
+        "xenokore"
+    ],
+    "flagWords": []
+}

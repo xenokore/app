@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit
+    bootstrap                       = "./vendor/autoload.php"
+    forceCoversAnnotation           = "false"
+    beStrictAboutCoversAnnotation   = "true"
+    beStrictAboutOutputDuringTests  = "true"
+    beStrictAboutTodoAnnotatedTests = "true"
+    convertErrorsToExceptions       = "true"
+    convertNoticesToExceptions      = "true"
+    convertWarningsToExceptions     = "true"
+    stopOnFailure                   = "false"
+    verbose                         = "true"
+    colors                          = "true">
+
+    <testsuites>
+        <testsuite name="default">
+            <directory suffix="Test.php">./tests</directory>
+            <exclude>./tests/data/</exclude>
+        </testsuite>
+    </testsuites>
+
+</phpunit>
