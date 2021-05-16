@@ -143,7 +143,12 @@ class App
             return $this->slim_app;
         }
 
-        return $this->slim_app = SlimBridge::create($this->container);
+        return $this->slim_app = SlimBridge::create($this->getContainer());
+    }
+
+    public function getTwigEnvironment(): TwigEnvironment
+    {
+        return $this->getContainer()->get(TwigEnvironment::class);
     }
 
     /**
@@ -263,7 +268,7 @@ class App
         return \array_merge($slim_config, ArrayHelper::convertDotNotationToArray($slim_config));
     }
 
-    private function createContainer()
+    private function createContainer(): ContainerInterface
     {
         // Setup builder
         $builder = new ContainerBuilder;
