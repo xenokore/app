@@ -99,8 +99,18 @@ class App
             $this->logger = $logger;
         }
 
-        // Load app
+        // Load app cache dir
         $this->loadAppCacheDir();
+
+        // Add Twig caching configuration option
+        $this->config['twig_config']['cache'] = false;
+        if ($this->config['twig_use_cache']) {
+            $cache_dir = $this->config['cache_dir'] . '/twig';
+            if (!DirectoryHelper::createIfNotExist($cache_dir)) {
+                throw new TwigProviderException("Twig cache dir can not be created: {$cache_dir}");
+            }
+            $this->config['twig_config']['cache'] = $cache_dir;
+        }
     }
 
     /**
@@ -334,22 +344,10 @@ class App
 
     private function getTwigContainerDefinitions(): array
     {
-        $config = &$this->config;
-
+        $config = $this->config;
         return [
             TwigProviderInterface::class => autowire(TwigProvider::class),
-            TwigEnvironment::class => function ($container) use (&$config) {
-
-                // Handle caching
-                $config['twig_config']['cache'] = false;
-                if ($config['twig_use_cache']) {
-                    $cache_dir = $config['cache_dir'] . '/twig';
-                    if (!DirectoryHelper::createIfNotExist($cache_dir)) {
-                        throw new TwigProviderException("Twig cache dir can not be created: {$cache_dir}");
-                    }
-                    $config['twig_config']['cache'] = $cache_dir;
-                }
-
+            TwigEnvironment::class => function ($container) use ($config) {
                 // Return a TwigEnvironment
                 return $container->get(TwigProviderInterface::class)->create(
                     $config['twig_config'],
