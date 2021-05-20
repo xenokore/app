@@ -123,7 +123,7 @@ class App
      * @param LoggerInterface $logger
      * @return void
      */
-    public function addLogger(LoggerInterface $logger): void
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
