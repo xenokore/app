@@ -21,6 +21,13 @@ class AppTest extends TestCase
      */
     protected $app;
 
+    /**
+     * The dependency container.
+     *
+     * @var ContainerInterface
+     */
+    protected $container;
+
     protected function setUp(): void
     {
         $this->app = new App([
@@ -31,6 +38,8 @@ class AppTest extends TestCase
             'twig_enabled' => true,
             'views_dir'    => __DIR__ . '/data/views',
         ]);
+
+        $this->app->initializeContainer();
     }
 
     public function testContainer()
@@ -43,6 +52,13 @@ class AppTest extends TestCase
         $test_class = $container->get(TestClass::class);
         $this->assertInstanceOf(TestClass::class, $test_class);
         $this->assertEquals('success', $test_class->getTestVar());
+    }
+
+    public function testGlobalContainer()
+    {
+        /** @var ContainerInterface $container */
+        $container = App::getGlobalContainer();
+        $this->assertInstanceOf(ContainerInterface::class, $container);
     }
 
     public function testTwig()

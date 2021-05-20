@@ -22,15 +22,18 @@ use Xenokore\Utility\Helper\ClassHelper;
 
 use Xenokore\App\Exception\AppException;
 use Xenokore\App\Exception\TwigProviderException;
+use Xenokore\App\Slim\SlimConfig;
+use Xenokore\App\Twig\TwigContainer;
 use Xenokore\App\Twig\TwigProvider;
 
 class App
 {
 
     // Default names for cache outputs
-    public const ROUTER_CACHE_FILENAME   = 'routes.cache.php';
     public const CONTAINER_COMPILE_DIR   = 'container';
     public const CONTAINER_COMPILE_CLASS = 'CompiledContainer';
+
+    protected static $global_container;
 
     /**
      * An array that contains the config values
@@ -84,7 +87,8 @@ class App
     {
         // Load environment variables file(s)
         if (!empty($config['.env'])) {
-            $this->loadEnv($config['.env']);
+            $dotenv = new Dotenv();
+            $dotenv->loadEnv($config['.env']);
         }
 
         // Load config values over the defaults
@@ -114,30 +118,62 @@ class App
     }
 
     /**
-     * Get the DI container
+     * Add a Logger to the application
+     *
+     * @param LoggerInterface $logger
+     * @return void
+     */
+    public function addLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * Get the logger.
+     *
+     * @return LoggerInterface|null
+     */
+    public function getLogger(): ?LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    /**
+     * Get the DI container.
      *
      * @return ContainerInterface
      */
     public function getContainer(): ContainerInterface
     {
         if (!$this->container) {
-            $this->container = $this->createContainer();
+            $this->initializeContainer();
         }
 
         return $this->container;
     }
 
     /**
-     * Loads a .env file and the corresponding .env.local, .env.$env
-     * and .env.$env.local files if they exist.
+     * Initialize the container and loads it into the class.
      *
-     * @param  string $path
      * @return void
      */
-    public function loadEnv(string $path): void
+    public function initializeContainer(): void
     {
-        $dotenv = new Dotenv();
-        $dotenv->loadEnv($path);
+        if ($this->container) {
+            return;
+        }
+
+        $container = $this->createContainer();
+
+        if (!$container instanceof ContainerInterface) {
+            throw new AppException('Failed to create container');
+        }
+
+        $this->container = $container;
+
+        // Load the container as a singleton
+        // This should only be used for unit-testing purposes
+        self::$global_container = $container;
     }
 
     /**
@@ -212,6 +248,17 @@ class App
             $definitions[LoggerInterface::class] = $this->logger;
         }
 
+        // Add Twig if enabled
+        if ($this->config['twig_enabled']) {
+            foreach (TwigContainer::getDefinitions(
+                $this->config['twig_config'],
+                $this->config['views_dir'],
+                $this->config['twig_extra_paths'],
+            ) as $key => $value) {
+                $definitions[$key] = $value;
+            }
+        }
+
         // Gather project class files
         $class_files = [];
         $src_dir     = $this->config['src_dir'];
@@ -256,28 +303,6 @@ class App
         return $definitions;
     }
 
-    private function getSlimConfig(): array
-    {
-        $is_debug = $this->env === 'dev';
-
-        $router_cache_file = false;
-        if (!$is_debug) {
-            $router_cache_file = $this->cache_dir . '/' . self::ROUTER_CACHE_FILENAME;
-        }
-
-        $slim_config = ArrayHelper::mergeRecursiveDistinct(
-            [
-                'settings.debug'               => $is_debug,
-                'settings.displayErrorDetails' => $is_debug,
-                'settings.routerCacheFile'     => $router_cache_file,
-            ],
-            $this->config['slim'] ?? []
-        );
-
-        // Create a normal array from the dotnotation array and combine them
-        return \array_merge($slim_config, ArrayHelper::convertDotNotationToArray($slim_config));
-    }
-
     private function createContainer(): ContainerInterface
     {
         // Setup builder
@@ -318,12 +343,9 @@ class App
 
             // Add Slim config if we're using the router
             if ($this->config['slim_enabled']) {
-                $builder->addDefinitions($this->getSlimConfig());
-            }
-
-            // Add Twig if enabled
-            if ($this->config['twig_enabled']) {
-                $builder->addDefinitions($this->getTwigContainerDefinitions());
+                $builder->addDefinitions(
+                    SlimConfig::getFinalConfig($this->config['slim'] ?? [], $this->cache_dir)
+                );
             }
 
             // Add custom App container definitions.
@@ -342,20 +364,15 @@ class App
         return $builder->build();
     }
 
-    private function getTwigContainerDefinitions(): array
+    public static function getGlobalContainer(): ContainerInterface
     {
-        $config = $this->config;
-        return [
-            TwigProviderInterface::class => autowire(TwigProvider::class),
-            TwigEnvironment::class => function ($container) use ($config) {
-                // Return a TwigEnvironment
-                return $container->get(TwigProviderInterface::class)->create(
-                    $config['twig_config'],
-                    $config['views_dir'],
-                    $config['twig_extra_paths'],
-                    $container->get('twig_extension_classes')
-                );
-            },
-        ];
+        if (self::$global_container === null) {
+            throw new AppException(
+                'Trying to get global container when the container has not been created yet.' . PHP_EOL .
+                'First create an App and initialize the container before calling it with getGlobalContainer().'
+            );
+        }
+
+        return self::$global_container;
     }
 }
