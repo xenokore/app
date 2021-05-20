@@ -139,20 +139,6 @@ class App
     }
 
     /**
-     * Get the DI container.
-     *
-     * @return ContainerInterface
-     */
-    public function getContainer(): ContainerInterface
-    {
-        if (!$this->container) {
-            $this->initializeContainer();
-        }
-
-        return $this->container;
-    }
-
-    /**
      * Initialize the container and loads it into the class.
      *
      * @return void
@@ -174,6 +160,32 @@ class App
         // Load the container as a singleton
         // This should only be used for unit-testing purposes
         self::$global_container = $container;
+    }
+
+    /**
+     * Get the DI container.
+     *
+     * @return ContainerInterface
+     */
+    public function getContainer(): ContainerInterface
+    {
+        if (!$this->container) {
+            $this->initializeContainer();
+        }
+
+        return $this->container;
+    }
+
+    public static function getGlobalContainer(): ContainerInterface
+    {
+        if (self::$global_container === null) {
+            throw new AppException(
+                'Trying to get global container when the container has not been created yet.' . PHP_EOL .
+                'First create an App and initialize the container before calling it with getGlobalContainer().'
+            );
+        }
+
+        return self::$global_container;
     }
 
     /**
@@ -362,17 +374,5 @@ class App
         }
 
         return $builder->build();
-    }
-
-    public static function getGlobalContainer(): ContainerInterface
-    {
-        if (self::$global_container === null) {
-            throw new AppException(
-                'Trying to get global container when the container has not been created yet.' . PHP_EOL .
-                'First create an App and initialize the container before calling it with getGlobalContainer().'
-            );
-        }
-
-        return self::$global_container;
     }
 }
