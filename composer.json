@@ -3,7 +3,7 @@
     "description": "The core app of the Xeno framework",
     "type": "library",
     "license": "MIT",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "authors": [
         {
             "name": "Yani",
