@@ -4,19 +4,21 @@ namespace Xenokore\App\Doctrine;
 
 use Xenokore\Utility\Helper\FileHelper;
 
-class DoctrineConfig extends \ArrayObject {
+class DoctrineConfig extends \ArrayObject
+{
 
     private $config;
 
     public function __construct(string $config_file_path = '')
     {
-        if(!FileHelper::isAccessible($config_file_path)){
+        if (!FileHelper::isAccessible($config_file_path)) {
             throw new \Exception('doctrine config filepath is not accessible');
         }
 
         $this->config = include $config_file_path;
     }
 
+    #[\ReturnTypeWillChange]
     public function &offsetGet($index)
     {
         return $this->config[$index];
